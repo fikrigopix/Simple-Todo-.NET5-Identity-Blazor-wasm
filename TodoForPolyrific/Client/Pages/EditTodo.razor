@@ -1,0 +1,61 @@
+﻿@page "/EditTodo/{todoId}"
+
+@using TodoForPolyrific.Shared
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<div class="container">
+    <h3>Edit</h3>
+    <hr />
+    <EditForm Model="todo" OnValidSubmit="@HandleSubmit">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <div class="form-group row">
+            <label for="lbTitle" class="col-sm-2 col-form-label">Title</label>
+            <div class="col-sm-10">
+                <InputText id="lbTitle" @bind-Value="todo.Title" class="form-control"></InputText>
+                <ValidationMessage For="@(() => todo.Title)"></ValidationMessage>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="lbDetail" class="col-sm-2 col-form-label">Detail</label>
+            <div class="col-sm-10">
+                <textarea rows="10" id="lbDetail" @bind="todo.Detail" class="form-control"></textarea>
+                <ValidationMessage For="@(() => todo.Detail)"></ValidationMessage>
+            </div>
+        </div>
+        <hr />
+        <div class="mb-3">
+            <button type="submit" class="btn btn-success">Save</button>
+            <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+        </div>
+    </EditForm>
+</div>
+
+
+@code {
+    [Parameter] public string todoId { get; set; }
+
+    private TodoViewModel todo = new TodoViewModel();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        todo = await Http.GetFromJsonAsync<TodoViewModel>("api/Todo/GetTodoById?id=" + todoId);
+    }
+
+    private async Task HandleSubmit()
+    {
+        todo.LastModified = DateTime.Now;
+
+        var submitResult = await Http.PutAsJsonAsync<TodoViewModel>("api/Todo/Update", todo);
+
+        if (submitResult.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}

@@ -1,0 +1,53 @@
+﻿@using TodoForPolyrific.Shared
+@inject HttpClient Http
+
+<div class="container">
+    <div class="row">
+        <a href="/AddTodo" class="btn btn-primary btn-sm m-3 p-3" title="Create New Todo Item"><i class="oi oi-plus"></i> Create New</a>
+        <button class="btn btn-danger btn-sm m-3 p-3" title="Delete All Todo Item" @onclick="DeleteAll"><i class="oi oi-trash"></i> Delete All</button>
+    </div>
+    <hr/>
+
+    @if (model == null)
+    {
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    }
+    else
+    {
+        <JobContainer Todos="model" OnStatusUpdated="HandleStatusUpdated">
+            <JobList ListStatus="TodoStatusEnum.Todo" AllowedStatuses="@(new TodoStatusEnum[] { TodoStatusEnum.Doing })" />
+            <JobList ListStatus="TodoStatusEnum.Doing" AllowedStatuses="@(new TodoStatusEnum[] { TodoStatusEnum.Todo, TodoStatusEnum.Done })" />
+            <JobList ListStatus="TodoStatusEnum.Done" AllowedStatuses="@(new TodoStatusEnum[] { TodoStatusEnum.Doing })" />
+        </JobContainer>
+    }
+</div>
+
+@code {
+    private List<TodoViewModel> model = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        model = await Http.GetFromJsonAsync<List<TodoViewModel>>("api/Todo/GetTodos");
+    }
+
+    private async Task HandleStatusUpdated(TodoViewModel updatedTodo)
+    {
+        await Http.PutAsJsonAsync<TodoViewModel>("api/Todo/Update", updatedTodo);
+    }
+
+    private async Task DeleteAll()
+    {
+        var result = await Http.DeleteAsync("api/Todo/DeleteAll");
+        if (result.IsSuccessStatusCode)
+        {
+            await LoadData();
+        }
+    }
+}

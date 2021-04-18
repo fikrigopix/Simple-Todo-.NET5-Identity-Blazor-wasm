@@ -1,0 +1,41 @@
+﻿@using TodoForPolyrific.Shared
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+
+<h3>@TodoViewModel.Title</h3>
+
+<li class="draggable" draggable="true" title="@TodoViewModel.Title" @ondragstart="()=> HandleDragStart(TodoViewModel)">
+    <p class="description">@(!string.IsNullOrEmpty(TodoViewModel.Detail) ? TodoViewModel.Detail.Substring(0, Math.Min(TodoViewModel.Detail.Length, 100)) +"..." : "")</p>
+    <p class="last-updated"><small>Updated Time </small>@TodoViewModel.LastModified.ToString("dd MMM yyyy (hh:mm.ss tt)")</p>
+    <p>
+        <a href="@editUrl" class="btn btn-warning oi oi-pencil mt-3" title="edit"></a>
+        <button class="btn btn-danger oi oi-trash mt-3" title="delete" @onclick="()=>Delete(TodoViewModel.Id)"></button>
+    </p>
+</li>
+
+@code {
+    [CascadingParameter] JobContainer Container { get; set; }
+    [Parameter] public TodoViewModel TodoViewModel { get; set; }
+    [Parameter] public EventCallback<TodoViewModel> OnDeleteSuccess { get; set; }
+
+    private string editUrl { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        editUrl = "/EditTodo/" + TodoViewModel.Id.ToString();
+    }
+
+    private void HandleDragStart(TodoViewModel selectedTodo)
+    {
+        Container.Payload = selectedTodo;
+    }
+
+    private async Task Delete(int id)
+    {
+        var result = await Http.DeleteAsync("api/Todo/Delete?TodoId=" + id.ToString());
+        if (result.IsSuccessStatusCode)
+        {
+            await OnDeleteSuccess.InvokeAsync(TodoViewModel);
+        }
+    }
+}

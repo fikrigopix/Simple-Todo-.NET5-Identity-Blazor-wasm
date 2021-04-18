@@ -1,0 +1,26 @@
+﻿@using TodoForPolyrific.Shared
+
+<div class="job-container">
+    <CascadingValue Value="this">
+        @ChildContent
+    </CascadingValue>
+</div>
+
+@code {
+    [Parameter] public List<TodoViewModel> Todos { get; set; }
+    [Parameter] public RenderFragment ChildContent { get; set; }
+    [Parameter] public EventCallback<TodoViewModel> OnStatusUpdated { get; set; }
+
+    public TodoViewModel Payload { get; set; }
+
+    public async Task UpdateTodoAsync(TodoStatusEnum newStatus)
+    {
+        var task = Todos.SingleOrDefault(x => x.Id == Payload.Id);
+        if (task != null)
+        {
+            task.Status = newStatus;
+            task.LastModified = DateTime.Now;
+            await OnStatusUpdated.InvokeAsync(Payload);
+        }
+    }
+}
